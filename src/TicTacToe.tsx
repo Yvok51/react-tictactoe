@@ -153,6 +153,13 @@ function playerWon(player: Player, field: Field) {
       return true;
     }
   }
+  consecutiveFields = 0;
+  for (let i = 0; i < field.size; i++) {
+    consecutiveFields = updateConsecutive(consecutiveFields, field.fieldItems[i][field.size - i - 1]);
+    if (consecutiveFields == NeededConsecutiveFields) {
+      return true;
+    }
+  }
 
   return false;
 }
