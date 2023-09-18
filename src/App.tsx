@@ -1,5 +1,11 @@
+import TicTacToe from './TicTacToe.tsx';
 import './App.css';
 
 export default function App() {
-  return <h1>Hello world</h1>;
+  return (
+    <main className="content">
+      <h1 className="main-header">Tic Tac Toe</h1>
+      <TicTacToe />
+    </main>
+  );
 }
