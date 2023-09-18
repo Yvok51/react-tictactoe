@@ -14,7 +14,17 @@ enum FieldValue {
 
 type Field = {
   size: number;
-  field: FieldValue[][];
+  fieldItems: FieldValue[][];
+};
+
+type State = {
+  turn: Player;
+  field: Field;
+};
+
+type History = {
+  index: number;
+  states: State[];
 };
 
 const FieldSize = 3;
@@ -22,42 +32,56 @@ const initialField: FieldValue[][] = Array(FieldSize)
   .fill(0)
   .map(_ => Array(FieldSize).fill(FieldValue.Nothing));
 
+const initialHistory = {
+  index: 0,
+  states: [{ turn: Player.Circle, field: { size: FieldSize, fieldItems: initialField } }],
+};
+
 export default function TicTacToe() {
-  const [turn, setTurn] = useState<Player>(Player.Circle);
-  const [field, setField] = useState<Field>({ size: FieldSize, field: initialField });
+  const [history, setHistory] = useState<History>(initialHistory);
+
+  const currState = history.states[history.index];
+  const turn = currState.turn;
+  const field = currState.field;
 
   const previousTurn = previousPlayer(turn);
   const gameOver = playerWon(previousTurn, field);
 
   function resetState() {
-    setTurn(Player.Circle);
-    setField({ size: FieldSize, field: initialField });
+    setHistory(initialHistory);
   }
 
-  function claimField(rowIdx: number, celIdx: number) {
-    return () => {
-      const fieldCopy = { ...field, field: field.field.map(x => x.slice()) };
-      fieldCopy.field[rowIdx][celIdx] = turn == Player.Circle ? FieldValue.Circle : FieldValue.Cross;
-      setField(fieldCopy);
+  function onClickField(rowIdx: number, cellIdx: number) {
+    return (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      if (field.fieldItems[rowIdx][cellIdx] != FieldValue.Nothing) {
+        return;
+      }
+
+      if (gameOver) {
+        return;
+      }
+
+      const newField = changeField(field, rowIdx, cellIdx, playerToValue(turn));
+      const newTurn = nextPlayer(turn);
+      const newIndex = history.index + 1;
+
+      const newStates = [...history.states];
+      newStates.splice(newIndex);
+      newStates.push({ turn: newTurn, field: newField });
+
+      const newHistory = { index: newIndex, states: newStates };
+      console.log(newHistory);
+
+      setHistory(newHistory);
     };
   }
 
-  function switchPlayer() {
-    setTurn(nextPlayer(turn));
-  }
-
-  const htmlField = field.field.map((row, rIdx) => (
+  const htmlField = field.fieldItems.map((row, rIdx) => (
     <div key={rIdx} className="t-row">
       {row.map((cell, cIdx) => {
-        const claim = claimField(rIdx, cIdx);
-        const onClickCallback = (_: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-          if (!gameOver && field.field[rIdx][cIdx] == FieldValue.Nothing) {
-            claim();
-            switchPlayer();
-          }
-        };
+        const clickField = onClickField(rIdx, cIdx);
         return (
-          <div onClick={onClickCallback} key={cIdx} className="t-cell">
+          <div onClick={clickField} key={cIdx} className="t-cell">
             <p>{cell}</p>
           </div>
         );
@@ -80,6 +104,12 @@ export default function TicTacToe() {
   );
 }
 
+function changeField(field: Field, rowIdx: number, cellIdx: number, value: FieldValue) {
+  const fieldCopy: Field = { ...field, fieldItems: field.fieldItems.map(x => x.slice()) };
+  fieldCopy.fieldItems[rowIdx][cellIdx] = value;
+  return fieldCopy;
+}
+
 function nextPlayer(player: Player) {
   if (player == Player.Circle) return Player.Cross;
   return Player.Circle;
@@ -91,12 +121,12 @@ function previousPlayer(player: Player) {
 
 const NeededConsecutiveFields = FieldSize;
 function playerWon(player: Player, field: Field) {
-  const wantedFieldValue = player == Player.Circle ? FieldValue.Circle : FieldValue.Cross;
+  const wantedFieldValue = playerToValue(player);
   const updateConsecutive = (consecutiveFields: number, field: FieldValue) =>
     field == wantedFieldValue ? consecutiveFields + 1 : 0;
 
   // check rows
-  for (const row of field.field) {
+  for (const row of field.fieldItems) {
     let consecutiveFields = 0;
     for (const value of row) {
       consecutiveFields = updateConsecutive(consecutiveFields, value);
@@ -109,7 +139,7 @@ function playerWon(player: Player, field: Field) {
   for (let j = 0; j < field.size; j++) {
     let consecutiveFields = 0;
     for (let i = 0; i < field.size; i++) {
-      consecutiveFields = updateConsecutive(consecutiveFields, field.field[i][j]);
+      consecutiveFields = updateConsecutive(consecutiveFields, field.fieldItems[i][j]);
       if (consecutiveFields == NeededConsecutiveFields) {
         return true;
       }
@@ -118,11 +148,16 @@ function playerWon(player: Player, field: Field) {
   // check diagonals
   let consecutiveFields = 0;
   for (let i = 0; i < field.size; i++) {
-    consecutiveFields = updateConsecutive(consecutiveFields, field.field[i][i]);
+    consecutiveFields = updateConsecutive(consecutiveFields, field.fieldItems[i][i]);
     if (consecutiveFields == NeededConsecutiveFields) {
       return true;
     }
   }
 
   return false;
+}
+
+function playerToValue(player: Player) {
+  if (player == Player.Circle) return FieldValue.Circle;
+  return FieldValue.Cross;
 }
