@@ -46,6 +46,7 @@ export default function TicTacToe() {
 
   const previousTurn = previousPlayer(turn);
   const gameOver = playerWon(previousTurn, field);
+  const draw = history.index == 9 && !gameOver;
 
   function resetState() {
     setHistory(initialHistory);
@@ -57,7 +58,7 @@ export default function TicTacToe() {
         return;
       }
 
-      if (gameOver) {
+      if (gameOver || draw) {
         return;
       }
 
@@ -76,7 +77,7 @@ export default function TicTacToe() {
     };
   }
 
-  const htmlField = field.fieldItems.map((row, rIdx) => (
+  const fieldsHtml = field.fieldItems.map((row, rIdx) => (
     <div key={rIdx} className="t-row">
       {row.map((cell, cIdx) => {
         const clickField = onClickField(rIdx, cIdx);
@@ -89,18 +90,45 @@ export default function TicTacToe() {
     </div>
   ));
 
-  const turnText = gameOver ? `Player ${previousTurn} won!` : `${turn}'s turn`;
+  const historyHtml = history.states.map((state, idx) => {
+    const currentTime = idx == history.index;
+    const cssClass = currentTime ? 't-history-highlight' : '';
+    return (
+      <tr key={idx} onClick={_ => setHistory({ ...history, index: idx })} className={cssClass}>
+        <td className="t-history-cell">{idx}</td>
+        <td className="t-history-cell">{state.turn}</td>
+      </tr>
+    );
+  });
+
+  let turnText = `${turn}'s turn`;
+  if (gameOver) {
+    turnText = `Player ${previousTurn} won!`;
+  } else if (draw) {
+    turnText = 'Draw!';
+  }
 
   return (
-    <section>
-      <div className="t-field">{htmlField}</div>
-      <div className="t-turn">
-        <p>{turnText}</p>
-      </div>
-      <button onClick={resetState} className="t-reset-btn">
-        Reset
-      </button>
-    </section>
+    <div className="tic-tac-toe">
+      <section className="t-play-area">
+        <div className="t-field">{fieldsHtml}</div>
+        <div className="t-turn">
+          <p>{turnText}</p>
+        </div>
+        <button onClick={resetState} className="t-reset-btn">
+          Reset
+        </button>
+      </section>
+      <section className="t-history-area">
+        <table className="t-history">
+          <thead className="t-history-head">
+            <td className="t-history-cell">Turn Number</td>
+            <td className="t-history-cell">Player</td>
+          </thead>
+          {historyHtml}
+        </table>
+      </section>
+    </div>
   );
 }
 

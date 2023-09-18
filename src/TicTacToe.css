@@ -50,3 +50,39 @@ section {
 .t-reset-btn:hover {
   cursor: pointer;
 }
+
+
+.t-history {
+  border: 1px solid #000;
+}
+
+tr:nth-of-type(even) {
+  background-color: #ebebeb;
+}
+
+.t-history-cell {
+  text-align: center;
+  padding: 0.5rem 1rem;
+}
+
+tr.t-history-highlight {
+  background-color: #fdfdd0;
+}
+
+.t-history-head {
+  border-bottom: 1px solid black;
+  background-color: #ebebeb;
+}
+
+.tic-tac-toe {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.t-play-area {
+  grid-column: 2 / 3;
+}
+
+.t-history-area {
+  grid-column: 3 / 4;
+}
