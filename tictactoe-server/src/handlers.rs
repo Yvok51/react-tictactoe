@@ -32,47 +32,41 @@ async fn create_game_handle(
     body: web::Json<CreateGameSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    let transaction = data.db_pool.begin().await;
-    if let Err(err) = transaction {
-        return internal_error(err);
-    }
-    let res = add_game(&data.db_pool, body.into_inner()).await;
-    if let Err(err) = res {
-        return match err {
-            sqlx::Error::Database(e) => HttpResponse::BadRequest().json(json_error(e.message())),
-            _ => internal_error(err),
-        };
-    }
-    let commit = transaction.unwrap().commit().await;
-    match commit {
+    let res = create_game(&data.db_pool, body.into_inner()).await;
+    match res {
         Ok(_) => HttpResponse::Created().json(json_success(res.unwrap())),
+        Err(sqlx::Error::Database(e)) => HttpResponse::BadRequest().json(json_error(e.message())),
         Err(err) => internal_error(err),
     }
 }
 
+async fn create_game(
+    pool: &sqlx::SqlitePool,
+    schema: CreateGameSchema,
+) -> Result<GameWithTurnsResponse, sqlx::Error> {
+    let transaction = pool.begin().await?;
+    let res = add_game(pool, schema).await?;
+    transaction.commit().await?;
+    Ok(res)
+}
+
 #[get("/games/{id}")]
 async fn get_game_handle(path: web::Path<i64>, data: web::Data<AppState>) -> impl Responder {
-    let id = path.into_inner();
-
-    let transaction = data.db_pool.begin().await;
-    if let Err(err) = transaction {
-        return internal_error(err);
-    }
-    let res = get_game_with_turns(&data.db_pool, id).await;
-    if let Err(err) = res {
-        return match err {
-            sqlx::Error::RowNotFound => {
-                HttpResponse::NotFound().json(json_error("Resource not found"))
-            }
-            _ => internal_error(err),
-        };
-    }
-    let commit = transaction.unwrap().commit().await;
-
-    match commit {
+    let res = get_game(&data.db_pool, path.into_inner()).await;
+    match res {
         Ok(_) => HttpResponse::Ok().json(json_success(res.unwrap())),
+        Err(sqlx::Error::RowNotFound) => {
+            HttpResponse::NotFound().json(json_error("Resource not found"))
+        }
         Err(err) => internal_error(err),
     }
+}
+
+async fn get_game(pool: &SqlitePool, game_id: i64) -> Result<GameWithTurnsResponse, sqlx::Error> {
+    let transaction = pool.begin().await?;
+    let res = get_game_with_turns(pool, game_id).await?;
+    transaction.commit().await?;
+    Ok(res)
 }
 
 #[put("/games/{id}")]
@@ -81,69 +75,56 @@ async fn update_game_handler(
     body: web::Json<CreateGameSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    let id = path.into_inner();
-    let new_value = body.into_inner();
-
-    let transaction = data.db_pool.begin().await;
-    if let Err(err) = transaction {
-        return internal_error(err);
-    }
-
-    let now = chrono::offset::Utc::now();
-    let update_game = sqlx::query!(
-        "UPDATE games SET title = ?1, updated_at = ?2 WHERE id = ?3",
-        new_value.title,
-        now,
-        id
-    )
-    .fetch_one(&data.db_pool)
-    .await;
-    if let Err(err) = update_game {
-        return match err {
-            sqlx::Error::RowNotFound => {
-                HttpResponse::BadRequest().json(json_error("Resource not found"))
-            }
-            _ => internal_error(err),
-        };
-    }
-
-    let delete_turns_query = sqlx::query!("DELETE FROM turns WHERE game_id = ?1", id)
-        .execute(&data.db_pool)
-        .await;
-    if let Err(err) = delete_turns_query {
-        return internal_error(err);
-    }
-    let res = add_turns(&data.db_pool, id, new_value.turns).await;
-    if let Err(err) = res {
-        return internal_error(err);
-    }
-    let res = get_game_with_turns(&data.db_pool, id).await;
-    if let Err(err) = res {
-        return internal_error(err);
-    }
-
-    let commit = transaction.unwrap().commit().await;
-    match commit {
+    let res = update_game(&data.db_pool, path.into_inner(), body.into_inner()).await;
+    match res {
         Ok(_) => HttpResponse::Ok().json(json_success(res.unwrap())),
+        Err(sqlx::Error::RowNotFound) => {
+            HttpResponse::BadRequest().json(json_error("Resource not found"))
+        }
         Err(err) => internal_error(err),
     }
 }
 
+async fn update_game(
+    pool: &SqlitePool,
+    game_id: i64,
+    schema: CreateGameSchema,
+) -> Result<GameWithTurnsResponse, sqlx::Error> {
+    let transaction = pool.begin().await?;
+
+    let now = chrono::offset::Utc::now();
+    let _update_game = sqlx::query!(
+        "UPDATE games SET title = ?1, updated_at = ?2 WHERE id = ?3",
+        schema.title,
+        now,
+        game_id
+    )
+    .fetch_one(pool)
+    .await?;
+    let _delete_turns_query = sqlx::query!("DELETE FROM turns WHERE game_id = ?1", game_id)
+        .execute(pool)
+        .await?;
+    add_turns(pool, game_id, schema.turns).await?;
+    let res = get_game_with_turns(pool, game_id).await?;
+    transaction.commit().await?;
+    Ok(res)
+}
+
 #[delete("/games/{id}")]
 async fn delete_game_handler(path: web::Path<i64>, data: web::Data<AppState>) -> impl Responder {
-    let id = path.into_inner();
-    let res = sqlx::query!("DELETE FROM games WHERE id = ?1", id)
-        .execute(&data.db_pool)
-        .await;
-    if let Err(err) = res {
-        return HttpResponse::InternalServerError().json(json_error(&format!("{:?}", err)));
+    let affected = delete_game(&data.db_pool, path.into_inner()).await;
+    match affected {
+        Ok(affected) if affected > 0 => HttpResponse::NoContent().finish(),
+        Ok(_) => HttpResponse::BadRequest().json(json_error("Unknown id")),
+        Err(err) => internal_error(err),
     }
-    let affected = res.unwrap().rows_affected();
-    if affected > 0 {
-        HttpResponse::NoContent().finish()
-    } else {
-        HttpResponse::BadRequest().json(json_error("Unknown id"))
-    }
+}
+
+async fn delete_game(pool: &SqlitePool, game_id: i64) -> Result<u64, sqlx::Error> {
+    let res = sqlx::query!("DELETE FROM games WHERE id = ?1", game_id)
+        .execute(pool)
+        .await?;
+    Ok(res.rows_affected())
 }
 
 async fn add_game(
