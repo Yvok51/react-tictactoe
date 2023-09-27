@@ -16,15 +16,18 @@ pub fn config(conf: &mut web::ServiceConfig) {
 
 #[get("/games")]
 async fn game_list_handler(data: web::Data<AppState>) -> impl Responder {
-    let games = sqlx::query_as!(GameModel, r#"SELECT * FROM games"#)
-        .fetch_all(&data.db_pool)
-        .await;
-    let filtered_games: Result<Vec<GameResponse>, sqlx::Error> =
-        games.map(|games| games.iter().map(|g| filter_game_response(g)).collect());
-    match filtered_games {
+    let games = game_list(&data.db_pool).await;
+    match games {
         Ok(responses) => HttpResponse::Ok().json(json_success(responses)),
         Err(err) => internal_error(err),
     }
+}
+
+async fn game_list(pool: &SqlitePool) -> Result<Vec<GameResponse>, sqlx::Error> {
+    let games = sqlx::query_as!(GameModel, r#"SELECT * FROM games"#)
+        .fetch_all(pool)
+        .await?;
+    Ok(games.iter().map(|g| filter_game_response(g)).collect())
 }
 
 #[post("/games/")]
@@ -34,7 +37,7 @@ async fn create_game_handle(
 ) -> impl Responder {
     let res = create_game(&data.db_pool, body.into_inner()).await;
     match res {
-        Ok(_) => HttpResponse::Created().json(json_success(res.unwrap())),
+        Ok(games) => HttpResponse::Created().json(json_success(games)),
         Err(sqlx::Error::Database(e)) => HttpResponse::BadRequest().json(json_error(e.message())),
         Err(err) => internal_error(err),
     }
@@ -43,9 +46,15 @@ async fn create_game_handle(
 async fn create_game(
     pool: &sqlx::SqlitePool,
     schema: CreateGameSchema,
-) -> Result<GameWithTurnsResponse, sqlx::Error> {
+) -> Result<Vec<GameResponse>, sqlx::Error> {
     let transaction = pool.begin().await?;
-    let res = add_game(pool, schema).await?;
+    let game_id = sqlx::query!(r#"INSERT INTO games (title) VALUES (?1)"#, schema.title)
+        .execute(pool)
+        .await?
+        .last_insert_rowid();
+
+    add_turns(pool, game_id, schema.turns).await?;
+    let res = game_list(pool).await?;
     transaction.commit().await?;
     Ok(res)
 }
@@ -125,19 +134,6 @@ async fn delete_game(pool: &SqlitePool, game_id: i64) -> Result<u64, sqlx::Error
         .execute(pool)
         .await?;
     Ok(res.rows_affected())
-}
-
-async fn add_game(
-    pool: &SqlitePool,
-    game: CreateGameSchema,
-) -> Result<GameWithTurnsResponse, sqlx::Error> {
-    let game_id = sqlx::query!(r#"INSERT INTO games (title) VALUES (?1)"#, game.title)
-        .execute(pool)
-        .await?
-        .last_insert_rowid();
-
-    add_turns(pool, game_id, game.turns).await?;
-    get_game_with_turns(pool, game_id).await
 }
 
 async fn add_turns(
