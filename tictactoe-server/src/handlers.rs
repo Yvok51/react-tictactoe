@@ -145,10 +145,11 @@ async fn add_turns(
     game_id: i64,
     turns: Vec<CreateTurnSchema>,
 ) -> Result<(), sqlx::Error> {
-    for turn in turns {
+    for (idx, turn) in turns.iter().enumerate() {
+        let idx = idx as i32;
         sqlx::query!(
             r#"INSERT INTO turns (game_id, turn_order, turn, x_coord, y_coord) VALUES (?1, ?2, ?3, ?4, ?5)"#,
-            game_id, turn.turn_order, turn.turn, turn.x_coord, turn.y_coord
+            game_id, idx, turn.turn, turn.x_coord, turn.y_coord
         )
         .execute(pool)
         .await?;
@@ -164,7 +165,7 @@ async fn get_game_with_turns(
         sqlx::query_as!(GameModel, r#"SELECT * FROM games WHERE id = ?1"#, game_id).fetch_one(pool);
     let turns = sqlx::query_as!(
         TurnModel,
-        r#"SELECT * FROM turns WHERE game_id = ?1"#,
+        r#"SELECT * FROM turns WHERE game_id = ?1 ORDER BY turn_order ASC"#,
         game_id
     )
     .fetch_all(pool);

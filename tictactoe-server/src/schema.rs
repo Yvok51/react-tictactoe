@@ -14,7 +14,6 @@ pub struct CreateGameSchema {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateTurnSchema {
-    pub turn_order: i32,
     pub turn: String,
     pub x_coord: i32,
     pub y_coord: i32,
