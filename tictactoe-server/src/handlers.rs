@@ -121,9 +121,10 @@ async fn update_game(
 
 #[delete("/games/{id}")]
 async fn delete_game_handler(path: web::Path<i64>, data: web::Data<AppState>) -> impl Responder {
-    let affected = delete_game(&data.db_pool, path.into_inner()).await;
+    let id = path.into_inner();
+    let affected = delete_game(&data.db_pool, id).await;
     match affected {
-        Ok(affected) if affected > 0 => HttpResponse::NoContent().finish(),
+        Ok(affected) if affected > 0 => HttpResponse::Ok().json(json_success(id)),
         Ok(_) => HttpResponse::BadRequest().json(json_error("Unknown id")),
         Err(err) => internal_error(err),
     }
