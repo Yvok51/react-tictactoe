@@ -1,0 +1,22 @@
+
+.t-games-list {
+  border: 1px solid #000;
+}
+
+tr:nth-of-type(even) {
+  background-color: #ebebeb;
+}
+
+.t-games-list-cell {
+  text-align: center;
+  padding: 0.5rem 1rem;
+}
+
+tr.t-highlight {
+  background-color: #fdfdd0;
+}
+
+.t-games-list-head {
+  border-bottom: 1px solid black;
+  background-color: #ebebeb;
+}

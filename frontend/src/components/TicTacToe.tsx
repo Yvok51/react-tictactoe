@@ -3,7 +3,8 @@ import { useAppSelector, useAppDispatch } from '../reduxHooks';
 import { currentGameSelector, reset, claimField } from '../features/currentGame/currentGameSlice';
 import { FieldValue, playerToValue, previousPlayer, FieldValueT, PlayerT } from './ticTacToeTypes';
 import { getCurrentField, getCurrentPlayer } from '../features/currentGame/constructField';
-import { TicTacToeHistory } from './TicTacToeHistory';
+import { History } from './History';
+import { GamesList } from './GamesList';
 import './TicTacToe.css';
 
 export default function TicTacToe() {
@@ -53,16 +54,17 @@ export default function TicTacToe() {
 
   return (
     <div className="tic-tac-toe">
+      <GamesList />
       <section className="t-play-area">
         <div className="t-field">{fieldsHtml}</div>
         <div className="t-turn">
           <p>{turnText}</p>
         </div>
-        <button onClick={_ => dispatch(reset())} className="t-reset-btn">
+        <button onClick={_ => dispatch(reset())} className="t-reset-btn t-btn">
           Reset
         </button>
       </section>
-      <TicTacToeHistory currentGame={currentGame} />
+      <History currentGame={currentGame} />
     </div>
   );
 }

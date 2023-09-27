@@ -1,4 +1,3 @@
-
 export const Player = {
   Circle: 'Circle',
   Cross: 'Cross',
@@ -11,7 +10,7 @@ export const PlayerFieldValue = {
 
 export const FieldValue = {
   Nothing: '',
-  ...PlayerFieldValue
+  ...PlayerFieldValue,
 } as const;
 
 type ValueOf<T> = T[keyof T];
@@ -24,7 +23,7 @@ export function playerToValue(player: PlayerT): PlayerFieldValueT {
   return FieldValue.Cross;
 }
 
-export function fieldValueToPlayer(value: PlayerFieldValueT): PlayerT
+export function fieldValueToPlayer(value: PlayerFieldValueT): PlayerT;
 export function fieldValueToPlayer(value: FieldValueT): PlayerT | null {
   switch (value) {
     case FieldValue.Circle:
@@ -52,11 +51,19 @@ export function previousPlayer(player: PlayerT): PlayerT {
 
 export type Turn = {
   turn: PlayerFieldValueT;
-  x_coord: number;
-  y_coord: number;
-}
+  xCoord: number;
+  yCoord: number;
+};
 
 export type Game = {
+  id: number | null;
   nextTurnIndex: number;
   turns: Turn[];
+};
+
+export type GameListing = {
+  id: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
 };
