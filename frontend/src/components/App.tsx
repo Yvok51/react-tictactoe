@@ -1,4 +1,4 @@
-import TicTacToe from './TicTacToe.tsx';
+import TicTacToe from './TicTacToe.js';
 import './App.css';
 
 export default function App() {
