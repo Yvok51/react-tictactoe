@@ -101,11 +101,9 @@ async fn update_game(
 ) -> Result<GameWithTurnsResponse, sqlx::Error> {
     let transaction = pool.begin().await?;
 
-    let now = chrono::offset::Utc::now();
     let _update_game = sqlx::query!(
-        "UPDATE games SET title = ?1, updated_at = ?2 WHERE id = ?3",
+        "UPDATE games SET title = ?1, updated_at = (datetime('now')) WHERE id = ?2",
         schema.title,
-        now,
         game_id
     )
     .fetch_one(pool)
