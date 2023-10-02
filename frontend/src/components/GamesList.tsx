@@ -3,6 +3,7 @@ import { gameDeleteStart, gameFetchStart, gamesSelector } from '../features/game
 import { useAppDispatch, useAppSelector } from '../reduxHooks';
 import './GamesList.css';
 import { currGameFetchStart, currentGameSelector, newGame } from '../features/currentGame/currentGameSlice';
+import { ErrorBox } from './ErrorBox';
 
 export function GamesList() {
   const gamesState = useAppSelector(gamesSelector);
@@ -37,13 +38,10 @@ export function GamesList() {
   let content;
   if (gamesStatus === 'loading') {
     content = <p>Loading...</p>;
+  } else if (gamesStatus === 'deleting') {
+    content = <p>Deleting...</p>;
   } else if (gamesStatus === 'error') {
-    content = (
-      <div className="error-box">
-        <p>Sorry, an error occured</p>
-        <p>{gamesState.error}</p>
-      </div>
-    );
+    content = <ErrorBox errorMessage={gamesState.error} />;
   } else if (gamesStatus === 'success') {
     const games = gamesState.value.map(game => {
       const cssClass = currentlySelected(game.id) ? 't-highlight' : '';
