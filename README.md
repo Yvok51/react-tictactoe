@@ -1,3 +1,35 @@
 # TicTacToe
 
-Run with `cargo run` in the `tictactoe-server` directory and `npm run dev` in the `frontend` directory.
+## Start up
+
+### Backend
+
+Install cargo and the sqlx cli application:
+
+```sh
+cargo install sqlx-cli
+```
+
+Change to the `tictactoe-server` directory and create the database:
+
+```sh
+cd tictactoe-server
+sqlx database create
+sqlx migrate run
+```
+
+Run the server:
+
+```sh
+cargo run
+```
+
+### Frontend
+
+Change to the `frontend` directory, install the required libraries and run the development server.
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
