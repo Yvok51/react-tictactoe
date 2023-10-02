@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -15,6 +17,6 @@ pub struct CreateGameSchema {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateTurnSchema {
     pub turn: String,
-    pub x_coord: i32,
-    pub y_coord: i32,
+    pub xCoord: i32,
+    pub yCoord: i32,
 }

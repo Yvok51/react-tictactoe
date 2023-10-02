@@ -144,7 +144,7 @@ async fn add_turns(
         let idx = idx as i32;
         sqlx::query!(
             r#"INSERT INTO turns (game_id, turn_order, turn, x_coord, y_coord) VALUES (?1, ?2, ?3, ?4, ?5)"#,
-            game_id, idx, turn.turn, turn.x_coord, turn.y_coord
+            game_id, idx, turn.turn, turn.xCoord, turn.yCoord
         )
         .execute(pool)
         .await?;
