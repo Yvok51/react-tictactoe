@@ -1,3 +1,5 @@
+use actix_cors::Cors;
+use actix_web::http::header;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use sqlx::SqlitePool;
@@ -28,13 +30,23 @@ async fn main() -> std::io::Result<()> {
     };
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:5173")
+            .allowed_origin("http://127.0.0.1:5173")
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+            .allowed_headers(vec![
+                header::CONTENT_TYPE,
+                header::AUTHORIZATION,
+                header::ACCEPT,
+            ])
+            .supports_credentials();
         // let cors = Cors::default();
         App::new()
             .app_data(web::Data::new(AppState {
                 db_pool: pool.clone(),
             }))
             .configure(handlers::config)
-            // .wrap(cors)
+            .wrap(cors)
             .wrap(Logger::default())
     })
     .bind(("127.0.0.1", 8080))?
