@@ -46,7 +46,7 @@ async fn create_game_handle(
 async fn create_game(
     pool: &sqlx::SqlitePool,
     schema: CreateGameSchema,
-) -> Result<Vec<GameResponse>, sqlx::Error> {
+) -> Result<GameWithTurnsResponse, sqlx::Error> {
     let transaction = pool.begin().await?;
     let game_id = sqlx::query!(r#"INSERT INTO games (title) VALUES (?1)"#, schema.title)
         .execute(pool)
@@ -54,7 +54,7 @@ async fn create_game(
         .last_insert_rowid();
 
     add_turns(pool, game_id, schema.turns).await?;
-    let res = game_list(pool).await?;
+    let res = get_game_with_turns(pool, game_id).await?;
     transaction.commit().await?;
     Ok(res)
 }
