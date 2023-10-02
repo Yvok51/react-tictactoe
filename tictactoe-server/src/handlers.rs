@@ -101,13 +101,16 @@ async fn update_game(
 ) -> Result<GameWithTurnsResponse, sqlx::Error> {
     let transaction = pool.begin().await?;
 
-    let _update_game = sqlx::query!(
+    let update_game = sqlx::query!(
         "UPDATE games SET title = ?1, updated_at = (datetime('now')) WHERE id = ?2",
         schema.title,
         game_id
     )
-    .fetch_one(pool)
+    .execute(pool)
     .await?;
+    if update_game.rows_affected() == 0 {
+        return Err(sqlx::Error::RowNotFound);
+    }
     let _delete_turns_query = sqlx::query!("DELETE FROM turns WHERE game_id = ?1", game_id)
         .execute(pool)
         .await?;
