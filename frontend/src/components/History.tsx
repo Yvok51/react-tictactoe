@@ -1,19 +1,33 @@
 import { useAppDispatch } from '../reduxHooks';
-import { clickHistory } from '../features/currentGame/currentGameSlice';
+import { clickHistory, currGameSaveStart } from '../features/currentGame/currentGameSlice';
 import { PlayerT, fieldValueToPlayer, nextPlayer } from './ticTacToeTypes';
 import { Game } from './ticTacToeTypes';
 import { FirstPlayer } from '../features/currentGame/constructField';
 import './History.css';
+import { useState } from 'react';
 
-interface TicTacToeHistoryProps {
+interface HistoryProps {
   currentGame: Game;
+  canSave: boolean;
 }
 
-export function History({ currentGame }: TicTacToeHistoryProps) {
+export function History({ currentGame, canSave }: HistoryProps) {
+  const [title, setTitle] = useState(currentGame.type === 'existing' ? currentGame.title : '');
+  const dispatch = useAppDispatch();
+
+  const canSendSave = title && canSave;
+
+  function saveGame(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    e.preventDefault();
+    if (canSendSave) {
+      dispatch(currGameSaveStart({ title, game: currentGame }));
+    }
+  }
+
   const historyHtml = currentGame.turns.map((turn, idx) => {
     const currentTime = idx == currentGame.nextTurnIndex - 1;
     return (
-      <HistoryCell
+      <HistoryRow
         key={idx + 1}
         highlighted={currentTime}
         index={idx + 1}
@@ -22,11 +36,12 @@ export function History({ currentGame }: TicTacToeHistoryProps) {
     );
   });
   historyHtml.unshift(
-    <HistoryCell key={0} highlighted={currentGame.nextTurnIndex === 0} index={0} player={FirstPlayer} />,
+    <HistoryRow key={0} highlighted={currentGame.nextTurnIndex === 0} index={0} player={FirstPlayer} />,
   );
 
   return (
     <section className="t-history-area">
+      <h2>History</h2>
       <table className="t-history">
         <thead className="t-history-head">
           <tr>
@@ -36,17 +51,26 @@ export function History({ currentGame }: TicTacToeHistoryProps) {
         </thead>
         <tbody>{historyHtml}</tbody>
       </table>
+      <form className="t-row save-game-form">
+        <div className="save-game-form-item">
+          <label htmlFor="gameTitleInput">Title: </label>
+          <input name="gameTitleInput" id="gameTitleInput" value={title} onChange={e => setTitle(e.target.value)} />
+        </div>
+        <button className={'save-game-form-item t-btn' + (canSendSave ? '' : ' t-btn-disabled')} onClick={saveGame}>
+          Save Game
+        </button>
+      </form>
     </section>
   );
 }
 
-interface HistoryCellProps {
+interface HistoryRowProps {
   highlighted: boolean;
   index: number;
   player: PlayerT;
 }
 
-function HistoryCell({ highlighted, index, player }: HistoryCellProps) {
+function HistoryRow({ highlighted, index, player }: HistoryRowProps) {
   const dispatch = useAppDispatch();
   const cssClass = highlighted ? 't-highlight' : '';
   return (

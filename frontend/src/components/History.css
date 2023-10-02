@@ -19,3 +19,11 @@ tr.t-highlight {
   border-bottom: 1px solid black;
   background-color: #ebebeb;
 }
+
+.save-game-form {
+  margin: 1rem;
+}
+
+.save-game-form-item {
+  margin: 0.5rem;
+}

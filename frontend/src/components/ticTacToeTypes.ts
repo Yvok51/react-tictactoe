@@ -55,11 +55,21 @@ export type Turn = {
   yCoord: number;
 };
 
-export type Game = {
-  id: number | null;
+type NewGame = {
+  type: 'new';
   nextTurnIndex: number;
   turns: Turn[];
 };
+
+export type ExistingGame = {
+  type: 'existing';
+  id: number;
+  title: string;
+  nextTurnIndex: number;
+  turns: Turn[];
+};
+
+export type Game = NewGame | ExistingGame;
 
 export type GameListing = {
   id: number;

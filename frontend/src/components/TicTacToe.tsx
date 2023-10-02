@@ -1,70 +1,100 @@
 import React from 'react';
 import { useAppSelector, useAppDispatch } from '../reduxHooks';
-import { currentGameSelector, reset, claimField } from '../features/currentGame/currentGameSlice';
+import { currentGameSelector, reset, claimField, newGame } from '../features/currentGame/currentGameSlice';
 import { FieldValue, playerToValue, previousPlayer, FieldValueT, PlayerT } from './ticTacToeTypes';
 import { getCurrentField, getCurrentPlayer } from '../features/currentGame/constructField';
 import { History } from './History';
 import { GamesList } from './GamesList';
+import { ErrorBox } from './ErrorBox';
 import './TicTacToe.css';
 
 export default function TicTacToe() {
-  const currentGame = useAppSelector(currentGameSelector);
+  const currentGameState = useAppSelector(currentGameSelector);
   const dispatch = useAppDispatch();
 
-  const turn = getCurrentPlayer(currentGame);
-  const field = getCurrentField(currentGame);
+  let content;
 
-  const previousTurn = previousPlayer(turn);
-  const gameOver = playerWon(previousTurn, field);
-  const draw = currentGame.nextTurnIndex == 9 && !gameOver;
+  if (currentGameState.state === 'loading') {
+    content = <p>Loading...</p>;
+  } else {
+    const currentGame = currentGameState.value;
 
-  function onClickField(rowIdx: number, cellIdx: number) {
-    return (_: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-      if (field[rowIdx][cellIdx] != FieldValue.Nothing) {
-        return;
-      }
+    const turn = getCurrentPlayer(currentGame);
+    const field = getCurrentField(currentGame);
 
-      if (gameOver || draw) {
-        return;
-      }
+    const previousTurn = previousPlayer(turn);
+    const gameOver = playerWon(previousTurn, field);
+    const draw = currentGame.nextTurnIndex == 9 && !gameOver;
 
-      dispatch(claimField({ rowIdx: rowIdx, colIdx: cellIdx, value: playerToValue(turn) }));
-    };
-  }
+    function onClickField(rowIdx: number, cellIdx: number) {
+      return (_: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        if (field[rowIdx][cellIdx] != FieldValue.Nothing) {
+          return;
+        }
 
-  const fieldsHtml = field.map((row, rIdx) => (
-    <div key={rIdx} className="t-row">
-      {row.map((cell, cIdx) => {
-        const clickField = onClickField(rIdx, cIdx);
-        return (
-          <div onClick={clickField} key={cIdx} className="t-cell">
-            <p>{cell}</p>
-          </div>
-        );
-      })}
-    </div>
-  ));
+        if (gameOver || draw) {
+          return;
+        }
 
-  let turnText = `${turn}'s turn`;
-  if (gameOver) {
-    turnText = `Player ${previousTurn} won!`;
-  } else if (draw) {
-    turnText = 'Draw!';
-  }
+        dispatch(claimField({ rowIdx: rowIdx, colIdx: cellIdx, value: playerToValue(turn) }));
+      };
+    }
 
-  return (
-    <div className="tic-tac-toe">
-      <GamesList />
-      <section className="t-play-area">
+    const fieldsHtml = field.map((row, rIdx) => (
+      <div key={rIdx} className="t-row">
+        {row.map((cell, cIdx) => {
+          const clickField = onClickField(rIdx, cIdx);
+          return (
+            <div onClick={clickField} key={cIdx} className="t-cell">
+              <p>{cell}</p>
+            </div>
+          );
+        })}
+      </div>
+    ));
+
+    let turnText = `${turn}'s turn`;
+    if (gameOver) {
+      turnText = `Player ${previousTurn} won!`;
+    } else if (draw) {
+      turnText = 'Draw!';
+    }
+
+    content = (
+      <React.Fragment>
         <div className="t-field">{fieldsHtml}</div>
         <div className="t-turn">
           <p>{turnText}</p>
         </div>
-        <button onClick={_ => dispatch(reset())} className="t-reset-btn t-btn">
-          Reset
-        </button>
-      </section>
-      <History currentGame={currentGame} />
+        <div className="full-screen-row">
+          <button onClick={() => dispatch(reset())} className="t-reset-btn t-btn">
+            Reset
+          </button>
+          <button onClick={() => dispatch(newGame())} className="t-reset-btn t-btn">
+            New Game
+          </button>
+        </div>
+      </React.Fragment>
+    );
+  }
+
+  if (currentGameState.state === 'error') {
+    content = (
+      <React.Fragment>
+        <ErrorBox errorMessage={currentGameState.error} />
+        {content}
+      </React.Fragment>
+    );
+  }
+
+  const canSave = currentGameState.state !== 'loading' && currentGameState.state !== 'saving';
+  const currentId = currentGameState.value.type === 'existing' ? currentGameState.value.id : -1;
+
+  return (
+    <div className="tic-tac-toe">
+      <GamesList />
+      <section className="t-play-area">{content}</section>
+      <History key={currentId} currentGame={currentGameState.value} canSave={canSave} />
     </div>
   );
 }

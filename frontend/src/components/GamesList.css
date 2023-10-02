@@ -20,3 +20,7 @@ tr.t-highlight {
   border-bottom: 1px solid black;
   background-color: #ebebeb;
 }
+
+button.t-delete-btn {
+  background-color: #fd4040;
+}

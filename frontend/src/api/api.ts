@@ -17,21 +17,23 @@ interface APIError {
 
 export type APIResult<T> = APISuccess<T> | APIError;
 
+export type APIType<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
+
 export type GameResponse = {
   id: number;
   title: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type GameWithTurnsResponse = GameResponse & { turns: TurnResponse[] };
 
 export type TurnResponse = {
   id: number;
-  turn_order: number;
+  turnOrder: number;
   turn: 'O' | 'X';
-  x_coord: number;
-  y_coord: number;
+  xCoord: number;
+  yCoord: number;
 };
 
 export type CreateGameSchema = {
@@ -51,10 +53,10 @@ export async function getGame(id: number): Promise<APIResult<GameWithTurnsRespon
   return game;
 }
 
-export async function createGame(game: CreateGameSchema): Promise<APIResult<GameResponse[]>> {
+export async function createGame(game: CreateGameSchema): Promise<APIResult<GameWithTurnsResponse>> {
   let response = await json_req(url('games/'), 'POST', JSON.stringify(game));
-  let games = await response.json();
-  return games;
+  let savedGame = await response.json();
+  return savedGame;
 }
 
 export async function updateGame(id: number, game: CreateGameSchema): Promise<APIResult<GameWithTurnsResponse>> {
@@ -64,7 +66,7 @@ export async function updateGame(id: number, game: CreateGameSchema): Promise<AP
 }
 
 export async function deleteGame(id: number): Promise<APIResult<number>> {
-  let response = await fetch(url(`/games/${id}`), {
+  let response = await fetch(url(`games/${id}`), {
     method: 'DELETE',
   });
   let deleted_id = await response.json();
