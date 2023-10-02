@@ -183,10 +183,10 @@ fn json_error(message: &str) -> serde_json::Value {
 fn filter_turn_record(record: &TurnModel) -> TurnResponse {
     TurnResponse {
         id: record.id,
-        turn_order: record.turn_order,
+        turnOrder: record.turn_order,
         turn: record.turn.clone(),
-        x_coord: record.x_coord,
-        y_coord: record.y_coord,
+        xCoord: record.x_coord,
+        yCoord: record.y_coord,
     }
 }
 
@@ -194,8 +194,8 @@ fn filter_game_response(record: &GameModel) -> GameResponse {
     GameResponse {
         id: record.id,
         title: record.title.clone(),
-        created_at: record.created_at.and_utc(),
-        updated_at: record.updated_at.and_utc(),
+        createdAt: record.created_at.and_utc(),
+        updatedAt: record.updated_at.and_utc(),
     }
 }
 
@@ -203,8 +203,8 @@ fn create_game_with_turns(record: GameModel, turns: Vec<TurnModel>) -> GameWithT
     GameWithTurnsResponse {
         id: record.id,
         title: record.title,
-        created_at: record.created_at.and_utc(),
-        updated_at: record.updated_at.and_utc(),
+        createdAt: record.created_at.and_utc(),
+        updatedAt: record.updated_at.and_utc(),
         turns: turns.iter().map(|t| filter_turn_record(t)).collect(),
     }
 }

@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
@@ -12,16 +14,16 @@ pub struct GameModel {
 pub struct GameResponse {
     pub id: i64,
     pub title: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub createdAt: chrono::DateTime<chrono::Utc>,
+    pub updatedAt: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GameWithTurnsResponse {
     pub id: i64,
     pub title: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub createdAt: chrono::DateTime<chrono::Utc>,
+    pub updatedAt: chrono::DateTime<chrono::Utc>,
     pub turns: Vec<TurnResponse>,
 }
 
@@ -45,8 +47,8 @@ pub struct TurnModel {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TurnResponse {
     pub id: i64,
-    pub turn_order: i64,
+    pub turnOrder: i64,
     pub turn: String,
-    pub x_coord: i64,
-    pub y_coord: i64,
+    pub xCoord: i64,
+    pub yCoord: i64,
 }
